@@ -1,4 +1,4 @@
-## CMPE 279 : Assignment 1 | Assignment 2
+### CMPE 279 : Assignment 1 | Assignment 2
 ----------------------------------------------
 ### Name: Geetika kapil
 ### Student ID:
