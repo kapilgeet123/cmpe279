@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <string.h>
+#include <sys/types.h>
+#include <pwd.h>
+#include <sys/wait.h>
 #define PORT 8080
 
 int main(int argc, char const *argv[])
@@ -15,6 +18,12 @@ int main(int argc, char const *argv[])
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
     char *hello = "Hello from server";
+    //struct passwd *user_info = getpwnam("dell");
+    struct passwd *user_info = getpwnam("nobody");
+    printf("User ID: %u\n",user_info->pw_uid);
+    if(user_info == NULL){
+        perror("Failed to get user id of NOBODY");
+    }
 
     // Creating socket file descriptor
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
@@ -23,7 +32,8 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
 
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR , &opt, sizeof(opt)))
+    //if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
+    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)))
     {
         perror("setsockopt");
         exit(EXIT_FAILURE);
@@ -52,10 +62,41 @@ int main(int argc, char const *argv[])
         exit(EXIT_FAILURE);
     }
 
-    valread = read(new_socket, buffer, 1024);
-    printf("Read %d bytes: %s\n", valread, buffer);
-    send(new_socket, hello, strlen(hello), 0);
-    printf("Hello message sent\n");
+    // valread = read(new_socket, buffer, 1024);
+    // printf("Read %d bytes: %s\n", valread, buffer);
+    // send(new_socket, hello, strlen(hello), 0);
+    // printf("Hello message sent\n");
+
+    int pid = fork();
+    if(pid==-1){
+        perror("Error in creating child process");
+        exit(EXIT_FAILURE);
+    }
+    else if(pid==0){
+        printf("FROM CHILD: Inside Child Process\n");
+        if(setuid(user_info->pw_uid)<0){
+            perror("Error in setting user id");
+            exit(EXIT_FAILURE);
+        }
+        else{
+            valread = read(new_socket, buffer, 1024);
+            printf("FROM CHILD: Read %d bytes: %s\n", valread, buffer);
+            send(new_socket, hello, strlen(hello), 0);
+            printf("FROM CHILD: Hello message sent from user Nobody.\n");
+        }
+    }
+    else if(pid>0){
+        printf("FROM PARENT: Inside Parent Process\n");
+        int child_status;
+        waitpid(pid, &child_status, 0);
+        if (child_status > 0){
+            perror("FROM PARENT: Error in child process.");
+            exit(EXIT_FAILURE);
+        }
+        else{
+            printf("FROM PARENT: Child process connection in client.\n");
+        }
+    }
 
     return 0;
 }
