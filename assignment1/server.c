@@ -74,7 +74,9 @@ int main(int argc, char const *argv[])
     }
     else if(pid==0){
         printf("FROM CHILD: Inside Child Process\n");
+        //dropping previleges
         if(setuid(user_info->pw_uid)<0){
+             printf("Don't have sufficient privileges to change UID\n" ); 
             perror("Error in setting user id");
             exit(EXIT_FAILURE);
         }

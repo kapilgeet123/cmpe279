@@ -15,7 +15,7 @@ int main(int argc, char const *argv[])
     struct sockaddr_in serv_addr; 
     char *hello = "Hello from client"; 
     char buffer[1024] = {0}; 
-
+ //creates a stream socket in the Internet domain:
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
     { 
         printf("\n Socket creation error \n"); 
@@ -23,11 +23,13 @@ int main(int argc, char const *argv[])
     } 
    
     memset(&serv_addr, '0', sizeof(serv_addr)); 
-   
+    // contains a code for the address family.
     serv_addr.sin_family = AF_INET; 
+    //The second field of serv_addr is unsigned short sin_port , which contain the port number. However, instead of simply copying the port number to this field, it is necessary to convert this to network byte order using the function htons() which converts a port number in host byte order to a port number in network byte order.
     serv_addr.sin_port = htons(PORT); 
        
     // Convert IPv4 and IPv6 addresses from text to binary form 
+    //The InetNtop() function converts an IPv4 or IPv6 Internet network address into a string in Internet standard format
     if(inet_pton(AF_INET, "127.0.0.1", &serv_addr.sin_addr)<=0)  
     { 
         printf("\nInvalid address/ Address not supported \n"); 
