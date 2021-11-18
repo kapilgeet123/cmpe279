@@ -20,17 +20,10 @@ int main(int argc, char const *argv[])
     char *hello = "Hello from server";
     //struct passwd *user_info = getpwnam("dell");
     struct passwd *user_info = getpwnam("nobody");
-    
+
     if (argc>1 && strcmp(argv[1], "Y") == 0)
     {
         int new_socket_dup = atoi(argv[0]);
-
-        if ((new_socket_dup = accept(atoi(argv[0]), (struct sockaddr *)&address,
-                       (socklen_t*)&addrlen))<0)
-        {
-            perror("accept");
-            exit(EXIT_FAILURE);
-        }
 
         valread = read(new_socket_dup, buffer, 1024);
         printf("%s\n", buffer);
@@ -105,9 +98,10 @@ int main(int argc, char const *argv[])
             exit(EXIT_FAILURE);
         }
         else{
-            char server_fd_pass[10];
-            sprintf(server_fd_pass, "%d", server_fd);
-            char *args[] = {server_fd_pass,"Y", NULL};
+            
+            char pass_socket[10];
+            sprintf(pass_socket, "%d", duplicate_socket);
+            char *args[] = {pass_socket,"Y", NULL};
             execv(argv[0], args);
         }
     }
