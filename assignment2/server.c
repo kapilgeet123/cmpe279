@@ -18,10 +18,27 @@ int main(int argc, char const *argv[])
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
     char *hello = "Hello from server";
-    
     //struct passwd *user_info = getpwnam("dell");
     struct passwd *user_info = getpwnam("nobody");
-    printf("User ID: %u\n",user_info->pw_uid);
+    
+    if (argc>1 && strcmp(argv[1], "Y") == 0)
+    {
+        int new_socket_dup = atoi(argv[0]);
+
+        if ((new_socket_dup = accept(atoi(argv[0]), (struct sockaddr *)&address,
+                       (socklen_t*)&addrlen))<0)
+        {
+            perror("accept");
+            exit(EXIT_FAILURE);
+        }
+
+        valread = read(new_socket_dup, buffer, 1024);
+        printf("%s\n", buffer);
+        send(new_socket_dup, hello, strlen(hello), 0);
+        printf("Hello message sent\n");
+        exit(0);
+    }
+    
     if(user_info == NULL){
         perror("Failed to get user id of NOBODY");
     }
@@ -75,34 +92,36 @@ int main(int argc, char const *argv[])
     }
     else if(pid==0){
         printf("FROM CHILD: Inside Child Process\n");
-        int status = setuid(user_info->pw_uid);
-        if(status<0){
-            printf("FROM CHILD: Privilage is not given.");
-            //perror("Error in setting user id");
-            //exit(EXIT_FAILURE);
-        }
 
-        //Re-exec server's child process after forking
-        char *args[] = {"server.exe", (char *) &server_fd};
-        if(execv("server.exe", args) < 0){
-            perror("ERROR");
+        int duplicate_socket = dup(new_socket);
+        if (duplicate_socket == -1)
+        {
+            perror("Could not duplicate the socket");
+        }
+        //dropping previleges
+        if(setuid(user_info->pw_uid)<0){
+            printf("Don't have sufficient privileges to change UID\n" ); 
+            perror("Error in setting user id");
             exit(EXIT_FAILURE);
         }
-        server_fd = (int) * args[1];
-
-        if((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t *)&addrlen))<0){
-            perror("ACCEPT");
-            exit(EXIT_FAILURE);
+        else{
+            char server_fd_pass[10];
+            sprintf(server_fd_pass, "%d", server_fd);
+            char *args[] = {server_fd_pass,"Y", NULL};
+            execv(argv[0], args);
         }
-
-        valread = read(new_socket, buffer, 1024);
-        printf("FROM CHILD: Read %d bytes: %s\n", valread, buffer);
-        send(new_socket, hello, strlen(hello), 0);
-        printf("FROM CHILD: Hello message sent from user Nobody and new Process.\n");
-        
     }
     else if(pid>0){
-        wait(NULL);
+        printf("FROM PARENT: Inside Parent Process\n");
+        int child_status;
+        waitpid(pid, &child_status, 0);
+        if (child_status > 0){
+            perror("FROM PARENT: Error in child process.");
+            exit(EXIT_FAILURE);
+        }
+        else{
+            printf("FROM PARENT: Child process connection in client.\n");
+        }
     }
 
     return 0;
