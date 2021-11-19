@@ -21,6 +21,8 @@ int main(int argc, char const *argv[])
     //struct passwd *user_info = getpwnam("dell");
     struct passwd *user_info = getpwnam("nobody");
 
+    printf("address of printf = 0x%p\n",printf);
+
     if (argc>1 && strcmp(argv[1], "Y") == 0)
     {
         int new_socket_dup = atoi(argv[0]);
